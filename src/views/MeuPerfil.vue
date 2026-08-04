@@ -467,9 +467,16 @@ const bannerPreview = ref('');
 const arquivoBanner = ref(null);
 const enviandoBanner = ref(false);
 
+const TAMANHO_MAX_IMAGEM = 10 * 1024 * 1024; // mesmo limite do Cloudinary — avisa antes de tentar subir
+
 const selecionarBanner = (evento) => {
     const arquivo = evento.target.files?.[0];
     if (!arquivo) return;
+    if (arquivo.size > TAMANHO_MAX_IMAGEM) {
+        showToast('Imagem muito grande. O tamanho máximo permitido é 10MB.', 'danger');
+        evento.target.value = '';
+        return;
+    }
     arquivoBanner.value = arquivo;
     bannerPreview.value = URL.createObjectURL(arquivo);
 };
