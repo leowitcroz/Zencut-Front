@@ -455,7 +455,12 @@ const carregarPerfil = async () => {
 };
 
 const logout = () => {
+    // Precisa remover com o mesmo domain usado no login (subdomínio da loja
+    // seta os cookies com domain: '.zencut.com.br'), senão o navegador não
+    // apaga de verdade e o cliente continua autenticado.
+    Cookies.remove('access_token', { domain: '.zencut.com.br' });
     Cookies.remove('access_token');
+    Cookies.remove('tenant_id', { domain: '.zencut.com.br' });
     Cookies.remove('tenant_id');
     window.location.href = '/login';
 };

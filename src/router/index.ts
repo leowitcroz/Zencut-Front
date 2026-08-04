@@ -123,6 +123,10 @@ router.beforeEach(async (to, from, next) => {
         // Guarda também se é a própria loja do dono da plataforma (ex: subdomínio
         // "plataforma") — usado pra barrar o /registro nesse subdomínio específico.
         sessionStorage.setItem(`tenant_plataforma_${subdomain}`, info?.ehPlataformaPropria ? 'true' : 'false');
+        // Guarda o ID real do tenant deste subdomínio — usado logo abaixo pra
+        // detectar sessão de OUTRA loja "vazando" aqui (ver comentário no bloco
+        // que lê os cookies).
+        sessionStorage.setItem(`tenant_id_real_${subdomain}`, info?.id || '');
 
       } catch (error) {
         console.error("Erro ao validar tenant no router:", error);
@@ -160,7 +164,7 @@ router.beforeEach(async (to, from, next) => {
 
   // 2. Lê direto do cookie
   const token = Cookies.get('access_token');
-  const isAuthenticated = !!token;
+  let isAuthenticated = !!token;
 
   // 🧠 CÉREBRO DO GUARD: Descobre quem é o usuário logado lendo o Token
   let isCliente = false;
@@ -175,6 +179,25 @@ router.beforeEach(async (to, from, next) => {
         const payload = JSON.parse(atob(parts[1] as string));
         isCliente = payload.userType === 'CLIENTE';
         isFuncionarioComum = payload.tipo === 'FUNCIONARIO' && payload.role === 2;
+
+        // 🛡️ Os cookies de sessão usam domain: '.zencut.com.br', ou seja, valem
+        // pra TODOS os subdomínios ao mesmo tempo. Sem essa checagem, alguém
+        // logado em barbearia-a.zencut.com.br que visitasse barbearia-b.zencut.com.br
+        // cairia direto na área logada — só que com os dados da barbearia A,
+        // sob a URL da barbearia B (sessão de uma loja "vazando" pra outra).
+        // Aqui comparamos o tenantId gravado no próprio token com o tenant
+        // real do subdomínio atual; se não bater, essa sessão não pertence
+        // aqui e tratamos como se a pessoa não estivesse logada NESSE contexto
+        // (sem apagar o cookie — no subdomínio certo ela continua logada normalmente).
+        if (!isMainDomain) {
+          const subdomain = hostname.split('.')[0];
+          const tenantIdReal = sessionStorage.getItem(`tenant_id_real_${subdomain}`);
+          if (tenantIdReal && payload.tenantId && payload.tenantId !== tenantIdReal) {
+            isAuthenticated = false;
+            isCliente = false;
+            isFuncionarioComum = false;
+          }
+        }
       }
     } catch (e) {
       console.error("Erro ao decodificar token JWT", e);

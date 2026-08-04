@@ -189,7 +189,13 @@ onMounted(async () => {
 const handleLogout = () => {
     auth.logout();
 
-    // Como não usamos mais o localStorage para o plano, garantimos a limpeza do cookie do tenant
+    // auth.logout() remove os cookies sem o domain (só funciona no domínio
+    // principal) — em qualquer subdomínio de loja, os cookies foram setados
+    // com domain: '.zencut.com.br' no login, então precisam ser removidos com
+    // o MESMO domain, senão o navegador não os apaga de verdade e a pessoa
+    // continua autenticada mesmo depois de clicar em "Sair".
+    Cookies.remove('access_token', { domain: '.zencut.com.br' });
+    Cookies.remove('access_token');
     Cookies.remove('tenant_id', { domain: '.zencut.com.br' });
     Cookies.remove('tenant_id');
 
