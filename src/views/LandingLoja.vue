@@ -35,7 +35,8 @@
             </section>
 
             <!-- SERVIÇOS (carrossel horizontal) -->
-            <section v-if="loja.servicos?.length" class="py-5 bg-light">
+            <section v-if="loja.servicos?.length" class="py-5" :class="{ 'bg-light': !secaoEhEscura('servicos') }"
+                :style="estiloSecaoDinamica('servicos')">
                 <div class="container py-3">
                     <h2 class="text-center fw-bold mb-5">Nossos serviços</h2>
                     <div class="servicos-carousel-wrap position-relative">
@@ -73,7 +74,7 @@
             <section v-if="loja.equipe?.length">
                 <h2 class="text-center fw-bold py-5 mb-0">Nossa equipe</h2>
                 <div class="equipe-row py-5" v-for="(f, i) in loja.equipe" :key="f.nome"
-                    :style="i % 2 === 1 ? { background: loja.corPrimaria, color: corTexto } : { background: '#fff' }">
+                    :style="equipeRowEscura(i) ? { background: loja.corPrimaria, color: corTexto } : { background: '#fff' }">
                     <div class="container">
                         <div class="row align-items-center g-4">
                             <div class="col-md-5" :class="i % 2 === 0 ? 'order-md-1' : 'order-md-2'">
@@ -85,7 +86,7 @@
                             </div>
                             <div class="col-md-7" :class="i % 2 === 0 ? 'order-md-2' : 'order-md-1'">
                                 <h4 class="fw-bold mb-2">{{ f.nome }}</h4>
-                                <p class="mb-0" :class="i % 2 === 1 ? '' : 'text-muted'" :style="i % 2 === 1 ? { opacity: .72 } : {}">{{ f.descricao || 'Profissional dedicado a oferecer o melhor atendimento.' }}</p>
+                                <p class="mb-0" :class="equipeRowEscura(i) ? '' : 'text-muted'" :style="equipeRowEscura(i) ? { opacity: .72 } : {}">{{ f.descricao || 'Profissional dedicado a oferecer o melhor atendimento.' }}</p>
                             </div>
                         </div>
                     </div>
@@ -94,7 +95,7 @@
 
             <!-- PLANOS (só aparece se a loja realmente tiver planos cadastrados) -->
             <section v-if="loja.planos?.length" class="py-5 text-center"
-                :style="estiloSecaoPlanos">
+                :class="{ 'bg-light': !secaoEhEscura('planos') }" :style="estiloSecaoDinamica('planos')">
                 <div class="container py-3">
                     <i class="bi bi-award fs-1 mb-3 d-block" :style="{ color: loja.corSecundaria }"></i>
                     <h2 class="fw-bold mb-2">Assine um plano e economize</h2>
@@ -135,10 +136,11 @@
             </section>
 
             <!-- CONTATO (card dividido: foto de um lado, painel de fala do outro) -->
-            <section class="py-5 bg-light">
+            <section class="py-5" :class="{ 'bg-light': !secaoEhEscura('contato') }" :style="estiloSecaoDinamica('contato')">
                 <div class="container py-3">
                     <h2 class="text-center fw-bold mb-2">Fale com a gente</h2>
-                    <p class="text-center text-muted mb-5">Manda uma mensagem e a gente te chama no WhatsApp.</p>
+                    <p class="text-center mb-5" :class="{ 'text-muted': !secaoEhEscura('contato') }"
+                        :style="secaoEhEscura('contato') ? { opacity: .75 } : {}">Manda uma mensagem e a gente te chama no WhatsApp.</p>
 
                     <div class="contato-loja-box mx-auto">
                         <div class="contato-loja-photo">
@@ -227,7 +229,33 @@ const corTexto = computed(() => corContrastante(loja.value?.corPrimaria));
 const corTextoSecundaria = computed(() => corContrastante(loja.value?.corSecundaria));
 const corTextoEhClaro = computed(() => corTexto.value === '#ffffff');
 
-const estiloSecaoPlanos = computed(() => {
+// Equipe e Planos só aparecem se a loja tiver cadastrado alguma coisa —
+// então a sequência real de seções muda de loja pra loja. Sem isso, duas
+// seções "claras" podiam cair uma do lado da outra (ex: loja sem equipe e
+// sem planos ia direto de Serviços pra Contato, os dois no mesmo tom).
+// Aqui calculamos a ordem de verdade e cada seção alterna clara/escura
+// conforme a posição dela nessa lista, não uma posição fixa no template.
+const secoesVisiveis = computed(() => {
+    const secoes = [];
+    if (loja.value?.servicos?.length) secoes.push('servicos');
+    if (loja.value?.equipe?.length) secoes.push('equipe');
+    if (loja.value?.planos?.length) secoes.push('planos');
+    secoes.push('contato'); // sempre aparece
+    return secoes;
+});
+
+const secaoEhEscura = (nome) => secoesVisiveis.value.indexOf(nome) % 2 === 1;
+
+const estiloSecaoDinamica = (nome) => {
+    if (!secaoEhEscura(nome)) {
+        // Seção clara: fundo cinza claro (via classe bg-light no template) —
+        // só os cards precisam de um tom escuro sutil pra não sumirem nele.
+        return {
+            '--loja-card-bg': 'rgba(0,0,0,.04)',
+            '--loja-card-border': 'rgba(0,0,0,.12)',
+            '--loja-card-hover-bg': 'rgba(0,0,0,.07)',
+        };
+    }
     const claro = corTextoEhClaro.value;
     return {
         background: loja.value?.corPrimaria,
@@ -236,7 +264,11 @@ const estiloSecaoPlanos = computed(() => {
         '--loja-card-border': claro ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.12)',
         '--loja-card-hover-bg': claro ? 'rgba(255,255,255,.1)' : 'rgba(0,0,0,.07)',
     };
-});
+};
+
+// Cada linha da Equipe já alternava clara/escura internamente — só precisa
+// começar na cor certa dependendo de onde a seção Equipe caiu na sequência.
+const equipeRowEscura = (i) => secaoEhEscura('equipe') ? i % 2 === 0 : i % 2 === 1;
 
 const estiloContatoForm = computed(() => {
     const claro = corTextoEhClaro.value;
