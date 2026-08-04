@@ -1,5 +1,5 @@
 <template>
-  <component :is="layouts[(route.meta.layout as string) || 'MainLayout']">
+  <component :is="layouts[(route.meta.layout as string) || 'PublicLayout']">
     <router-view />
   </component>
 </template>
