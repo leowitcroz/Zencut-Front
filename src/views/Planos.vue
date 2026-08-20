@@ -27,7 +27,11 @@
             </div>
         </div>
 
-        <div v-if="!temModuloAssinaturas" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
+        <div v-if="carregandoPermissoes" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+
+        <div v-else-if="!temModuloAssinaturas" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
             <i class="bi bi-lock-fill fs-1 me-4 text-warning"></i>
             <div>
                 <h5 class="fw-bold mb-1">Recurso Indisponível no seu Plano</h5>
@@ -388,6 +392,7 @@ const showToast = (msg, type = 'success') => {
 //  MÓDULO / GATING
 // =========================================================================
 const temModuloAssinaturas = ref(false);
+const carregandoPermissoes = ref(true);
 const abaAtiva = ref('PLANOS');
 const confirmModalRef = ref(null);
 
@@ -656,6 +661,8 @@ onMounted(async () => {
         }
     } catch (error) {
         console.error('Erro ao buscar as permissões dos módulos:', error);
+    } finally {
+        carregandoPermissoes.value = false;
     }
 
     if (temModuloAssinaturas.value) {

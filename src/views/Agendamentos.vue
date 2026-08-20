@@ -26,7 +26,11 @@
             </div>
         </div>
 
-        <div v-if="!temModuloAgendamento" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
+        <div v-if="carregandoPermissoes" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+
+        <div v-else-if="!temModuloAgendamento" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
             <i class="bi bi-lock-fill fs-1 me-4 text-warning"></i>
             <div>
                 <h5 class="fw-bold mb-1">Recurso Indisponível no seu Plano</h5>
@@ -280,6 +284,7 @@ const labelTipoCobranca = (agenda) => {
 const confirmModalRef = ref(null);
 
 const temModuloAgendamento = ref(false);
+const carregandoPermissoes = ref(true);
 const planoAtual = ref('');
 
 const toastRef = ref(null);
@@ -494,6 +499,8 @@ onMounted(async () => {
     } catch (error) {
         console.error('Erro ao buscar as permissões dos módulos do cliente:', error);
         showToast('Não foi possível verificar as permissões do seu plano.', 'danger');
+    } finally {
+        carregandoPermissoes.value = false;
     }
 
     if (temModuloAgendamento.value) {
