@@ -103,149 +103,13 @@
                 </div>
             </div>
 
-            <!-- Configurações da loja: numa linha larga própria, lado a lado, pra não empilhar tudo numa coluna estreita -->
-            <template v-if="perfil.role === 1">
-                <div class="col-12 col-lg-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-white border-bottom-0 pt-3">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-whatsapp text-success me-2"></i> WhatsApp da Loja</h6>
-                            <p class="text-muted small mb-0">Usado no botão "Renovar Plano" quando um cliente está sem
-                                crédito ou com o plano vencido.</p>
-                        </div>
-                        <div class="card-body p-4">
-                            <form @submit.prevent="salvarWhatsapp">
-                                <label class="form-label fw-bold small text-muted text-uppercase">Número (com DDD)</label>
-                                <TelefoneInput v-model="formWhatsapp.numero" input-class="form-control-lg mb-3" />
-                                <button type="submit" class="btn btn-success w-100 fw-bold" :disabled="salvandoWhatsapp">
-                                    <span v-if="salvandoWhatsapp" class="spinner-border spinner-border-sm me-2"></span>
-                                    Salvar Número
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-lg-8">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-white border-bottom-0 pt-3">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-palette-fill text-primary me-2"></i> Personalização da Tela de Login</h6>
-                            <p class="text-muted small mb-0">Cores e texto de destaque exibidos no login do subdomínio da
-                                sua loja.</p>
-                        </div>
-                        <div class="card-body p-4">
-                            <form @submit.prevent="salvarPersonalizacao" class="row g-4">
-                                <div class="col-md-7">
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold small text-muted text-uppercase">Cor Primária</label>
-                                            <div class="input-group">
-                                                <input type="color" class="form-control form-control-color"
-                                                    v-model="formPersonalizacao.corPrimaria" title="Escolher cor">
-                                                <input type="text" class="form-control" v-model="formPersonalizacao.corPrimaria">
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold small text-muted text-uppercase">Cor Secundária</label>
-                                            <div class="input-group">
-                                                <input type="color" class="form-control form-control-color"
-                                                    v-model="formPersonalizacao.corSecundaria" title="Escolher cor">
-                                                <input type="text" class="form-control" v-model="formPersonalizacao.corSecundaria">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-muted text-uppercase">Título de destaque</label>
-                                        <input type="text" class="form-control" v-model="formPersonalizacao.loginTitulo"
-                                            placeholder="Gerencie sua barbearia com simplicidade." maxlength="120">
-                                    </div>
-                                    <div class="mb-0">
-                                        <label class="form-label fw-bold small text-muted text-uppercase">Descrição</label>
-                                        <textarea class="form-control" rows="2" v-model="formPersonalizacao.loginDescricao"
-                                            placeholder="Agendamentos, planos de assinatura, comissões da equipe e financeiro em um só lugar."
-                                            maxlength="255"></textarea>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-5 d-flex flex-column">
-                                    <label class="form-label fw-bold small text-muted text-uppercase">Prévia</label>
-                                    <div class="rounded-3 p-3 flex-grow-1 d-flex flex-column justify-content-center"
-                                        :style="{ background: previaGradiente, color: previaCorTexto }">
-                                        <strong>{{ formPersonalizacao.loginTitulo || 'Gerencie sua barbearia com simplicidade.' }}</strong>
-                                        <p class="small mb-0" :class="{ 'text-warning': previaCorTexto === '#ffffff' }">{{ formPersonalizacao.loginDescricao || 'Agendamentos, planos de assinatura, comissões da equipe e financeiro em um só lugar.' }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-primary fw-bold px-4" :disabled="salvandoPersonalizacao">
-                                        <span v-if="salvandoPersonalizacao" class="spinner-border spinner-border-sm me-2"></span>
-                                        Salvar Personalização
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white border-bottom-0 pt-3">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-shop-window text-primary me-2"></i> Vitrine
-                                Pública (Landing Page da Loja)</h6>
-                            <p class="text-muted small mb-0">É a primeira página que seus clientes veem ao acessar o
-                                site da sua loja, antes de fazer login.</p>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="row g-4">
-                                <div class="col-md-5">
-                                    <label class="form-label fw-bold small text-muted text-uppercase">Banner</label>
-                                    <div class="banner-preview mb-2"
-                                        :style="bannerPreview ? { backgroundImage: `url(${bannerPreview})` } : {}">
-                                        <span v-if="!bannerPreview" class="text-muted small">Nenhum banner ainda</span>
-                                    </div>
-                                    <input type="file" accept="image/*" class="form-control form-control-sm"
-                                        @change="selecionarBanner">
-                                    <div class="form-text">
-                                        <i class="bi bi-aspect-ratio me-1"></i>Recomendado: 1600×700px, na horizontal
-                                        (ele preenche o topo da página inteiro).
-                                    </div>
-                                    <button v-if="arquivoBanner" class="btn btn-sm btn-primary fw-bold mt-2 w-100"
-                                        :disabled="enviandoBanner" @click="enviarBanner">
-                                        <span v-if="enviandoBanner" class="spinner-border spinner-border-sm me-2"></span>
-                                        Enviar Banner
-                                    </button>
-                                </div>
-                                <div class="col-md-7">
-                                    <form @submit.prevent="salvarVitrine">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold small text-muted text-uppercase">Descrição
-                                                da loja</label>
-                                            <textarea class="form-control" rows="2" v-model="formVitrine.descricaoLoja"
-                                                placeholder="Tradição e qualidade em cada corte." maxlength="255"></textarea>
-                                        </div>
-                                        <div class="row g-3 mb-3">
-                                            <div class="col-md-7">
-                                                <label class="form-label fw-bold small text-muted text-uppercase">Endereço</label>
-                                                <input type="text" class="form-control" v-model="formVitrine.endereco"
-                                                    placeholder="Rua Exemplo, 123 - Bairro">
-                                            </div>
-                                            <div class="col-md-5">
-                                                <label class="form-label fw-bold small text-muted text-uppercase">Instagram</label>
-                                                <input type="text" class="form-control" v-model="formVitrine.instagram"
-                                                    placeholder="@sualoja">
-                                            </div>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary fw-bold px-4"
-                                            :disabled="salvandoVitrine">
-                                            <span v-if="salvandoVitrine" class="spinner-border spinner-border-sm me-2"></span>
-                                            Salvar Vitrine
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
+            <!-- Cores, banner, WhatsApp e demais dados da vitrine pública agora ficam
+                 em Minha Vitrine (aba própria no menu), com prévia da página inteira. -->
+            <div class="col-12" v-if="perfil.role === 1">
+                <router-link to="/minha-vitrine" class="btn btn-outline-primary fw-bold">
+                    <i class="bi bi-shop-window me-1"></i> Personalizar minha vitrine pública
+                </router-link>
+            </div>
         </div>
 
         <!-- ========================= ABA: MEUS AGENDAMENTOS ========================= -->
@@ -338,13 +202,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Toast } from 'bootstrap';
 import RelatorioBarbeiroDetalhe from '../components/RelatorioBarbeiroDetalhe.vue';
-import TelefoneInput from '../components/TelefoneInput.vue';
-import { corContrastante } from '@/utils/cor.js';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const getConfig = () => ({ headers: { 'Authorization': `Bearer ${Cookies.get('access_token')}`, 'x-tenant-id': Cookies.get('tenant_id') } });
@@ -399,117 +261,6 @@ const carregandoPerfil = ref(false);
 
 const formSenha = ref({ senhaAtual: '', novaSenha: '', confirmarSenha: '' });
 const salvandoSenha = ref(false);
-
-const formWhatsapp = ref({ numero: '' });
-const salvandoWhatsapp = ref(false);
-
-const formPersonalizacao = ref({ corPrimaria: '#0D1B2A', corSecundaria: '#0D6EFD', loginTitulo: '', loginDescricao: '' });
-const salvandoPersonalizacao = ref(false);
-const previaGradiente = computed(() => `linear-gradient(135deg, ${formPersonalizacao.value.corPrimaria} 0%, ${formPersonalizacao.value.corSecundaria} 100%)`);
-// Prévia de como a tela de login vai ficar — precisa escolher texto claro ou
-// escuro igual o login de verdade (ver corContrastante em utils/cor.js), senão
-// o dono nem percebe que a cor escolhida vai deixar o texto real ilegível.
-const previaCorTexto = computed(() => corContrastante(formPersonalizacao.value.corPrimaria));
-
-const carregarWhatsapp = async () => {
-    try {
-        const tenantId = Cookies.get('tenant_id');
-        if (!tenantId) return;
-        const response = await axios.get(`${API_URL}/tenants/${tenantId}/plano`, getConfig());
-        formWhatsapp.value.numero = response.data.whatsapp || '';
-        formPersonalizacao.value = {
-            corPrimaria: response.data.corPrimaria || '#0D1B2A',
-            corSecundaria: response.data.corSecundaria || '#0D6EFD',
-            loginTitulo: response.data.loginTitulo || '',
-            loginDescricao: response.data.loginDescricao || '',
-        };
-        formVitrine.value = {
-            descricaoLoja: response.data.descricaoLoja || '',
-            endereco: response.data.endereco || '',
-            instagram: response.data.instagram || '',
-        };
-        bannerPreview.value = response.data.bannerUrl || '';
-    } catch (error) {
-        console.error('Erro ao buscar o whatsapp da loja:', error);
-    }
-};
-
-const salvarWhatsapp = async () => {
-    salvandoWhatsapp.value = true;
-    try {
-        await axios.patch(`${API_URL}/tenants/meu-whatsapp`, { whatsapp: formWhatsapp.value.numero.trim() }, getConfig());
-        showToast('WhatsApp da loja atualizado!', 'success');
-    } catch (error) {
-        showToast(error.response?.data?.message || 'Erro ao salvar o whatsapp.', 'danger');
-    } finally {
-        salvandoWhatsapp.value = false;
-    }
-};
-
-const salvarPersonalizacao = async () => {
-    salvandoPersonalizacao.value = true;
-    try {
-        await axios.patch(`${API_URL}/tenants/minha-personalizacao`, formPersonalizacao.value, getConfig());
-        showToast('Personalização da tela de login atualizada!', 'success');
-    } catch (error) {
-        showToast(error.response?.data?.message || 'Erro ao salvar a personalização.', 'danger');
-    } finally {
-        salvandoPersonalizacao.value = false;
-    }
-};
-
-// =========================================================================
-//  VITRINE PÚBLICA (Landing Page da loja no subdomínio)
-// =========================================================================
-const formVitrine = ref({ descricaoLoja: '', endereco: '', instagram: '' });
-const salvandoVitrine = ref(false);
-const bannerPreview = ref('');
-const arquivoBanner = ref(null);
-const enviandoBanner = ref(false);
-
-const TAMANHO_MAX_IMAGEM = 10 * 1024 * 1024; // mesmo limite do Cloudinary — avisa antes de tentar subir
-
-const selecionarBanner = (evento) => {
-    const arquivo = evento.target.files?.[0];
-    if (!arquivo) return;
-    if (arquivo.size > TAMANHO_MAX_IMAGEM) {
-        showToast('Imagem muito grande. O tamanho máximo permitido é 10MB.', 'danger');
-        evento.target.value = '';
-        return;
-    }
-    arquivoBanner.value = arquivo;
-    bannerPreview.value = URL.createObjectURL(arquivo);
-};
-
-const enviarBanner = async () => {
-    if (!arquivoBanner.value) return;
-    enviandoBanner.value = true;
-    try {
-        const formData = new FormData();
-        formData.append('banner', arquivoBanner.value);
-        await axios.post(`${API_URL}/tenants/meu-banner`, formData, {
-            headers: { ...getConfig().headers, 'Content-Type': 'multipart/form-data' }
-        });
-        showToast('Banner da loja atualizado!', 'success');
-        arquivoBanner.value = null;
-    } catch (error) {
-        showToast(error.response?.data?.message || 'Erro ao enviar o banner.', 'danger');
-    } finally {
-        enviandoBanner.value = false;
-    }
-};
-
-const salvarVitrine = async () => {
-    salvandoVitrine.value = true;
-    try {
-        await axios.patch(`${API_URL}/tenants/minha-personalizacao`, formVitrine.value, getConfig());
-        showToast('Vitrine da loja atualizada!', 'success');
-    } catch (error) {
-        showToast(error.response?.data?.message || 'Erro ao salvar a vitrine.', 'danger');
-    } finally {
-        salvandoVitrine.value = false;
-    }
-};
 
 const carregarPerfil = async () => {
     carregandoPerfil.value = true;
@@ -610,20 +361,5 @@ const carregarMeuFinanceiro = async () => {
 onMounted(async () => {
     if (toastRef.value) toastInstance.value = new Toast(toastRef.value);
     await carregarPerfil();
-    if (perfil.value.role === 1) await carregarWhatsapp();
 });
 </script>
-
-<style scoped>
-.banner-preview {
-    height: 140px;
-    border-radius: .6rem;
-    border: 1px dashed #ced4da;
-    background-color: #f8f9fa;
-    background-size: cover;
-    background-position: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-</style>

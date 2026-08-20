@@ -66,6 +66,11 @@ const router = createRouter({
       component: () => import('../views/MeuPerfil.vue'),
       meta: { layout: 'MainLayout', auth: true }
     },
+    {
+      path: '/minha-vitrine',
+      component: () => import('../views/MinhaVitrine.vue'),
+      meta: { layout: 'MainLayout', auth: true }
+    },
     // Raiz do site: no domínio principal é a landing da ZenCut (propaganda da
     // plataforma); em cada subdomínio de loja é a landing pública DAQUELA
     // barbearia (vitrine pros clientes dela, antes de logar). Ver beforeEach.
