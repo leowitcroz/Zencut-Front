@@ -62,6 +62,11 @@ const router = createRouter({
       meta: { layout: 'MainLayout', auth: true }
     },
     {
+      path: '/clientes',
+      component: () => import('../views/Clientes.vue'),
+      meta: { layout: 'MainLayout', auth: true }
+    },
+    {
       path: '/perfil',
       component: () => import('../views/MeuPerfil.vue'),
       meta: { layout: 'MainLayout', auth: true }

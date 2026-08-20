@@ -136,6 +136,7 @@ const menuItemsVisiveis = computed(() => {
         { to: '/home', icone: 'bi bi-house-door', label: 'Dashboard', mostrar: !isFuncionarioComum.value },
         { to: '/financeiro', icone: 'bi bi-currency-dollar', label: 'Financeiro', mostrar: isSuperAdmin.value || (hasFinanceiro.value && podeVerFinanceiroGeral.value) },
         { to: '/agendamentos', icone: 'bi bi-calendar-event', label: 'Agenda', mostrar: !isSuperAdmin.value && !isFuncionarioComum.value && hasAgendamento.value },
+        { to: '/clientes', icone: 'bi bi-people-fill', label: 'Clientes', mostrar: !isSuperAdmin.value && !isFuncionarioComum.value },
         { to: '/planos', icone: 'bi bi-award', label: 'Planos', mostrar: !isSuperAdmin.value && !isFuncionarioComum.value && hasAssinaturas.value },
         { to: '/minha-vitrine', icone: 'bi bi-shop-window', label: 'Minha Vitrine', mostrar: !isSuperAdmin.value && funcionarioRole.value === 1 },
         { to: '/adm/lojas', icone: 'bi bi-buildings-fill', label: 'Central de Lojas', mostrar: isSuperAdmin.value },
