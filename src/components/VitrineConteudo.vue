@@ -2,15 +2,15 @@
     <div class="vitrine-conteudo">
         <!-- HEADER -->
         <header class="loja-header py-3" :style="{ background: dados.corPrimaria, color: corTexto }">
-            <div class="container d-flex align-items-center justify-content-between">
-                <h3 class="fw-bold mb-0 text-truncate">{{ dados.nomeNegocio || 'Sua Loja' }}</h3>
-                <router-link v-if="!modoPreview" to="/login" class="btn fw-bold px-3 flex-shrink-0"
+            <div class="container d-flex align-items-center justify-content-between gap-2">
+                <h3 class="loja-header-title fw-bold mb-0 text-truncate">{{ dados.nomeNegocio || 'Sua Loja' }}</h3>
+                <router-link v-if="!modoPreview" to="/login" class="btn fw-bold loja-header-btn flex-shrink-0"
                     :style="{ background: dados.corSecundaria, color: corTextoSecundaria, border: 'none' }">
-                    <i class="bi bi-person-circle me-1"></i> Área do Cliente
+                    <i class="bi bi-person-circle"></i><span class="loja-header-btn-text">Área do Cliente</span>
                 </router-link>
-                <span v-else class="btn fw-bold px-3 flex-shrink-0"
+                <span v-else class="btn fw-bold loja-header-btn flex-shrink-0"
                     :style="{ background: dados.corSecundaria, color: corTextoSecundaria, border: 'none', opacity: .85 }">
-                    <i class="bi bi-person-circle me-1"></i> Área do Cliente
+                    <i class="bi bi-person-circle"></i><span class="loja-header-btn-text">Área do Cliente</span>
                 </span>
             </div>
         </header>
@@ -314,6 +314,28 @@ const falarSobrePlano = (plano) => {
 <style scoped>
 .vitrine-conteudo {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* --- Header: nome da loja + botão "Área do Cliente" --- */
+.loja-header-btn-text {
+    margin-left: .35rem;
+}
+
+@media (max-width: 480px) {
+    /* Em telas bem estreitas o botão com texto inteiro empurrava o nome da
+       loja pra um espacinho mínimo, cortando o título quase todo — aqui o
+       botão vira só o ícone, sobrando espaço de verdade pro nome. */
+    .loja-header-title {
+        font-size: 1.15rem;
+    }
+
+    .loja-header-btn {
+        padding: .5rem .65rem;
+    }
+
+    .loja-header-btn-text {
+        display: none;
+    }
 }
 
 .loja-hero {
