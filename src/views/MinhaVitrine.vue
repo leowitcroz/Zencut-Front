@@ -82,12 +82,40 @@
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label small text-muted fw-bold">Título de destaque</label>
-                                <input type="text" class="form-control" v-model="form.loginTitulo"
-                                    placeholder="Gerencie sua barbearia com simplicidade." maxlength="120">
+                            <hr class="my-4">
+                            <h6 class="fw-bold small text-uppercase text-muted mb-3">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Tela de login
+                                <span class="fw-normal" style="text-transform: none;">— o que aparece antes do funcionário entrar</span>
+                            </h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-7">
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted fw-bold">Título de destaque</label>
+                                        <input type="text" class="form-control" v-model="form.loginTitulo"
+                                            placeholder="Gerencie sua barbearia com simplicidade." maxlength="120">
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label small text-muted fw-bold">Descrição</label>
+                                        <textarea v-model="form.loginDescricao" class="form-control" rows="2"
+                                            placeholder="Agendamentos, planos de assinatura, comissões da equipe e financeiro em um só lugar."
+                                            maxlength="255"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-5 d-flex flex-column">
+                                    <label class="form-label small text-muted fw-bold">Prévia do login</label>
+                                    <div class="rounded-3 p-3 flex-grow-1 d-flex flex-column justify-content-center"
+                                        :style="{ background: previaLoginGradiente, color: previaLoginCorTexto }">
+                                        <strong class="small">{{ form.loginTitulo || 'Gerencie sua barbearia com simplicidade.' }}</strong>
+                                        <p class="small mb-0" :class="{ 'text-warning': previaLoginCorTexto === '#ffffff' }">{{ form.loginDescricao || 'Agendamentos, planos de assinatura, comissões da equipe e financeiro em um só lugar.' }}</p>
+                                    </div>
+                                </div>
                             </div>
 
+                            <hr class="my-4">
+                            <h6 class="fw-bold small text-uppercase text-muted mb-3">
+                                <i class="bi bi-shop-window me-1"></i> Vitrine pública
+                                <span class="fw-normal" style="text-transform: none;">— o que os clientes veem</span>
+                            </h6>
                             <div class="mb-3">
                                 <label class="form-label small text-muted fw-bold">Descrição da loja</label>
                                 <textarea v-model="form.descricaoLoja" class="form-control" rows="2"
@@ -150,6 +178,7 @@ import Cookies from 'js-cookie';
 import { Toast } from 'bootstrap';
 import VitrineConteudo from '../components/VitrineConteudo.vue';
 import TelefoneInput from '../components/TelefoneInput.vue';
+import { corContrastante } from '@/utils/cor.js';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const getConfig = (extraHeaders = {}) => ({ headers: { 'Authorization': `Bearer ${Cookies.get('access_token')}`, 'x-tenant-id': Cookies.get('tenant_id'), ...extraHeaders } });
@@ -204,6 +233,12 @@ const equipe = ref([]);
 const planos = ref([]);
 
 const bannerPreview = computed(() => bannerLocalPreview.value || bannerUrl.value);
+
+// A tela de login é uma página separada (AuthLayout.vue) — não faz parte da
+// prévia grande da vitrine, então tem sua própria mini-prévia aqui do lado
+// dos campos de título/descrição do login.
+const previaLoginGradiente = computed(() => `linear-gradient(135deg, ${form.value.corPrimaria} 0%, ${form.value.corSecundaria} 100%)`);
+const previaLoginCorTexto = computed(() => corContrastante(form.value.corPrimaria));
 
 const urlVitrinePublicada = computed(() => {
     const isDev = import.meta.env.DEV || window.location.hostname.includes('localhost');
