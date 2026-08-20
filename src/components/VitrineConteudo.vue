@@ -475,6 +475,19 @@ const falarSobrePlano = (plano) => {
     .carousel-nav-btn {
         display: none;
     }
+
+    /* No mobile os cards quase sempre não cabem todos juntos — "centralizar"
+       nesse caso empurra o scroll pra uma posição que já começa cortando o
+       primeiro card. Sem centralização, o carrossel começa exatamente no
+       início, com o card inteiro visível e só uma espiadinha do próximo. */
+    .servicos-carousel,
+    .planos-carousel {
+        justify-content: flex-start;
+    }
+
+    .servico-card-carousel {
+        flex-basis: 82%;
+    }
 }
 
 .equipe-foto {
