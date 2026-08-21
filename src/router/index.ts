@@ -213,7 +213,7 @@ router.beforeEach(async (to, from, next) => {
       if (parts.length >= 2 && parts[1]) {
         // O "as string" dá a garantia final que o atob() precisa
         const payload = JSON.parse(atob(parts[1] as string));
-        isCliente = payload.userType === 'CLIENTE';
+        isCliente = payload.tipo === 'CLIENTE';
         isFuncionarioComum = payload.tipo === 'FUNCIONARIO' && payload.role === 2;
 
         // 🛡️ Os cookies de sessão usam domain: '.zencut.com.br', ou seja, valem
