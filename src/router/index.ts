@@ -216,15 +216,16 @@ router.beforeEach(async (to, from, next) => {
         isCliente = payload.tipo === 'CLIENTE';
         isFuncionarioComum = payload.tipo === 'FUNCIONARIO' && payload.role === 2;
 
-        // 🛡️ Os cookies de sessão usam domain: '.zencut.com.br', ou seja, valem
-        // pra TODOS os subdomínios ao mesmo tempo. Sem essa checagem, alguém
-        // logado em barbearia-a.zencut.com.br que visitasse barbearia-b.zencut.com.br
-        // cairia direto na área logada — só que com os dados da barbearia A,
-        // sob a URL da barbearia B (sessão de uma loja "vazando" pra outra).
-        // Aqui comparamos o tenantId gravado no próprio token com o tenant
-        // real do subdomínio atual; se não bater, essa sessão não pertence
-        // aqui e tratamos como se a pessoa não estivesse logada NESSE contexto
-        // (sem apagar o cookie — no subdomínio certo ela continua logada normalmente).
+        // 🛡️ Os cookies de sessão são "host-only" (sem domain explícito), então o
+        // navegador já não manda o cookie de uma loja pra outra sozinho. Esta
+        // checagem é uma segunda camada de defesa — cobre cookies antigos que
+        // ainda estejam no navegador de alguém com domain: '.zencut.com.br' de
+        // antes desse ajuste (válidos por até 7 dias) e qualquer outro cenário em
+        // que o tenantId do token não bata com o subdomínio atual. Comparamos o
+        // tenantId gravado no próprio token com o tenant real do subdomínio
+        // atual; se não bater, essa sessão não pertence aqui e tratamos como se a
+        // pessoa não estivesse logada NESSE contexto (sem apagar o cookie — no
+        // subdomínio certo ela continua logada normalmente).
         if (!isMainDomain) {
           const subdomain = hostname.split('.')[0];
           const tenantIdReal = sessionStorage.getItem(`tenant_id_real_${subdomain}`);

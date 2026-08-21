@@ -192,11 +192,11 @@ onMounted(async () => {
 const handleLogout = () => {
     auth.logout();
 
-    // auth.logout() remove os cookies sem o domain (só funciona no domínio
-    // principal) — em qualquer subdomínio de loja, os cookies foram setados
-    // com domain: '.zencut.com.br' no login, então precisam ser removidos com
-    // o MESMO domain, senão o navegador não os apaga de verdade e a pessoa
-    // continua autenticada mesmo depois de clicar em "Sair".
+    // auth.logout() já remove os cookies host-only (o normal desde que o login
+    // parou de setar domain: '.zencut.com.br'). A remoção COM esse domain aqui
+    // embaixo é só limpeza defensiva de cookies antigos que alguém ainda possa
+    // ter no navegador de antes desse ajuste (duram até 7 dias) — sem ela, esse
+    // cookie legado sobreviveria ao "Sair" e a pessoa continuaria autenticada.
     Cookies.remove('access_token', { domain: '.zencut.com.br' });
     Cookies.remove('access_token');
     Cookies.remove('tenant_id', { domain: '.zencut.com.br' });

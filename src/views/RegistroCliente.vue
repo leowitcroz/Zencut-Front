@@ -129,14 +129,11 @@ const handleRegister = async () => {
         // Pega o token retornado (o cliente já sai logado!)
         const accessToken = response.data.access_token;
 
-        const isLocalhost = window.location.hostname.endsWith('.localhost');
-        if (isLocalhost) {
-            Cookies.set('access_token', accessToken, { expires: 7 });
-            Cookies.set('tenant_id', tenantId.value, { expires: 7 });
-        } else {
-            Cookies.set('access_token', accessToken, { expires: 7, domain: '.zencut.com.br' });
-            Cookies.set('tenant_id', tenantId.value, { expires: 7, domain: '.zencut.com.br' });
-        }
+        // Cookie "host-only" (sem domain): o cadastro sempre acontece dentro do
+        // subdomínio da própria loja, então a sessão só precisa valer ali — não
+        // em todos os subdomínios da zencut (ver mesmo ajuste em Login.vue).
+        Cookies.set('access_token', accessToken, { expires: 7 });
+        Cookies.set('tenant_id', tenantId.value, { expires: 7 });
 
         showToast('Conta criada com sucesso!', 'success');
 

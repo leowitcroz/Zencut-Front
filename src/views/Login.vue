@@ -198,13 +198,16 @@ const handleLogin = async () => {
                 }
                 // Caso 2: Login no lugar certo
                 else {
-                    if (isLocalhost) {
-                        Cookies.set('access_token', accessToken, { expires: 7 });
-                        Cookies.set('tenant_id', tenantId, { expires: 7 });
-                    } else {
-                        Cookies.set('access_token', accessToken, { expires: 7, domain: '.zencut.com.br' });
-                        Cookies.set('tenant_id', tenantId, { expires: 7, domain: '.zencut.com.br' });
-                    }
+                    // Cookie "host-only" (sem domain): vale só pro hostname atual,
+                    // não pra TODOS os subdomínios da zencut. Cada loja tem sessão
+                    // isolada — inclusive o domínio principal. Sem isso, logar numa
+                    // loja e depois só trocar a URL pra outro subdomínio (ou pro
+                    // domínio principal) mantinha a pessoa autenticada lá, com a
+                    // sessão da loja errada. O dono que loga sem saber o próprio
+                    // subdomínio já foi redirecionado no "Caso 1" acima ANTES de
+                    // chegar aqui, então esse cookie sempre nasce no lugar certo.
+                    Cookies.set('access_token', accessToken, { expires: 7 });
+                    Cookies.set('tenant_id', tenantId, { expires: 7 });
 
                     // SALVA NO LOCALSTORAGE COM A ESTRUTURA PARA O MENU LATERAL LER
                     if (dadosModulos) {
