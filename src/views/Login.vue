@@ -168,10 +168,15 @@ const handleLogin = async () => {
     try {
         loading.value = true;
 
+        // Sem timeout, uma conexão ruim com a origem deixava o botão "Entrando..."
+        // girando indefinidamente sem nenhum erro aparecer — parecia travado.
         const response = await axios.post(`${API_URL}/auth/login`, {
             email: form.email,
             senha: form.password
-        }, tenantIdAtual.value ? { headers: { 'x-tenant-id': tenantIdAtual.value } } : undefined);
+        }, {
+            timeout: 15000,
+            ...(tenantIdAtual.value ? { headers: { 'x-tenant-id': tenantIdAtual.value } } : {}),
+        });
 
         // Extraímos as propriedades que vêm da sua API
         const { token, tenantId, subdomain, usuario, features, tenant } = response.data;
@@ -223,7 +228,9 @@ const handleLogin = async () => {
         }, 1000);
 
     } catch (e) {
-        const mensagemErro = e.response?.data?.message || 'Verifique as suas credenciais.';
+        const mensagemErro = e.code === 'ECONNABORTED'
+            ? 'A conexão demorou demais. Verifique sua internet e tente de novo.'
+            : (e.response?.data?.message || 'Verifique as suas credenciais.');
         showToast(`Erro no login: ${mensagemErro}`, 'danger');
         console.error('Detalhes do erro:', e);
         loading.value = false;
