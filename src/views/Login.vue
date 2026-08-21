@@ -83,6 +83,11 @@ const toastIcon = ref('');
 // --- ESTADOS DINÂMICOS DA TELA ---
 const nomeNegocio = ref('ZenCut'); // Nome padrão caso não tenha subdomínio
 const exibirRegistro = ref(false);
+// ID real do tenant deste subdomínio — mandado no login pra restringir a busca
+// por e-mail a ESTA loja. Sem isso, duas lojas com a mesma combinação de
+// e-mail (uma como cliente, outra como funcionário) podiam fazer o login de
+// uma vazar pra conta da outra.
+const tenantIdAtual = ref('');
 
 const hostname = window.location.hostname;
 const partes = hostname.split('.');
@@ -95,17 +100,24 @@ const configurarTelaPorSubdominio = async () => {
     // Cadastro só existe dentro do subdomínio de uma barbearia (cliente dela se
     // cadastrando). No domínio principal ou no subdomínio adm/admin, nunca mostra —
     // barbearia nova entra em contato comercial, não se autocadastra.
-    const temSubdominio = !isMainDomain && partes[0] !== 'adm' && partes[0] !== 'admin';
+    const ehSubdominioReservado = partes[0] === 'adm' || partes[0] === 'admin';
+    const temSubdominio = !isMainDomain;
 
     if (temSubdominio) {
-        exibirRegistro.value = true;
-        const subdomain = partes[0]; // Pega a palavra 'alcateia' por exemplo
+        exibirRegistro.value = !ehSubdominioReservado;
+        const subdomain = partes[0]; // Pega a palavra 'alcateia' por exemplo (ou 'adm'/'admin')
 
         try {
-            // Busca o nome real do negócio na nossa nova rota
+            // Busca o nome real do negócio (e o ID real do tenant, usado no login
+            // abaixo pra restringir a busca por e-mail a ESTA loja) — inclusive
+            // pro subdomínio reservado do dono da plataforma, que também é um
+            // tenant de verdade e merece a mesma proteção contra e-mail cruzado.
             const res = await axios.get(`${API_URL}/tenants/info/${subdomain}`);
             if (res.data && res.data.nomeNegocio) {
                 nomeNegocio.value = res.data.nomeNegocio;
+            }
+            if (res.data?.id) {
+                tenantIdAtual.value = res.data.id;
             }
             // Esse subdomínio é a própria loja do dono da plataforma (ex: "plataforma"),
             // não uma barbearia cliente de verdade — nunca oferece autocadastro aqui.
@@ -116,7 +128,10 @@ const configurarTelaPorSubdominio = async () => {
             console.error("Não foi possível carregar os dados da barbearia", e);
         }
     } else {
-        // Portal global ou Super Admin
+        // Domínio principal (zencut.com.br) — portal global, sem subdomínio
+        // conhecido ainda. Login aqui faz busca por e-mail sem restrição de
+        // tenant (é assim que o dono consegue logar sem saber a própria URL —
+        // ver comentário no handleLogin).
         exibirRegistro.value = false;
     }
 
@@ -144,7 +159,7 @@ const handleLogin = async () => {
         const response = await axios.post(`${API_URL}/auth/login`, {
             email: form.email,
             senha: form.password
-        });
+        }, tenantIdAtual.value ? { headers: { 'x-tenant-id': tenantIdAtual.value } } : undefined);
 
         // Extraímos as propriedades que vêm da sua API
         const { token, tenantId, subdomain, usuario, features, tenant } = response.data;

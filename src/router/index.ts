@@ -116,9 +116,30 @@ router.beforeEach(async (to, from, next) => {
     const fallbackUrl = isDev ? `http://localhost${portaAtual}` : 'https://zencut.com.br';
 
     if (!tenantValidado) {
-      try {
+      // fetch() puro não tem timeout — numa rede instável ele pode ficar
+      // pendurado indefinidamente, e como essa validação roda ANTES de
+      // qualquer coisa aparecer na tela, o resultado era uma tela branca
+      // permanente até a pessoa dar F5 na mão. Cada tentativa agora tem um
+      // teto de 6s, com 2 tentativas antes de desistir de verdade — só joga
+      // pro fallback depois de esgotar as tentativas por erro de rede, ou
+      // imediatamente se a API respondeu (definitivamente) que o tenant não existe.
+      const buscarInfoTenant = async (tentativas = 2): Promise<Response> => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-        const response = await fetch(`${apiUrl}/tenants/info/${subdomain}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        try {
+          return await fetch(`${apiUrl}/tenants/info/${subdomain}`, { signal: controller.signal });
+        } catch (err) {
+          if (tentativas <= 1) throw err;
+          await new Promise(r => setTimeout(r, 500));
+          return buscarInfoTenant(tentativas - 1);
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      };
+
+      try {
+        const response = await buscarInfoTenant();
 
         if (!response.ok) {
           // Se o tenant não existe, joga para a URL correta dependendo do ambiente
