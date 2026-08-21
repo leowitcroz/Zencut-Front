@@ -27,11 +27,7 @@
             </div>
         </div>
 
-        <div v-if="carregandoPermissoes" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-        </div>
-
-        <div v-else-if="!temModuloAssinaturas" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
+        <div v-if="tenantStore.carregado && !temModuloAssinaturas" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
             <i class="bi bi-lock-fill fs-1 me-4 text-warning"></i>
             <div>
                 <h5 class="fw-bold mb-1">Recurso Indisponível no seu Plano</h5>
@@ -346,15 +342,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Modal, Toast } from 'bootstrap';
 import CurrencyInput from '../components/CurrencyInput.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
+import { useTenantStore } from '../stores/tenant';
 
 const router = useRouter();
+const tenantStore = useTenantStore();
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const getConfig = () => ({ headers: { 'Authorization': `Bearer ${Cookies.get('access_token')}`, 'x-tenant-id': Cookies.get('tenant_id') } });
@@ -391,8 +389,7 @@ const showToast = (msg, type = 'success') => {
 // =========================================================================
 //  MÓDULO / GATING
 // =========================================================================
-const temModuloAssinaturas = ref(false);
-const carregandoPermissoes = ref(true);
+const temModuloAssinaturas = computed(() => tenantStore.hasAssinaturas);
 const abaAtiva = ref('PLANOS');
 const confirmModalRef = ref(null);
 
@@ -649,24 +646,28 @@ const carregarHistoricoRenovacoes = async () => {
 // =========================================================================
 //  CICLO DE VIDA
 // =========================================================================
-onMounted(async () => {
+// O MainLayout (que já está montado quando essa página abre) busca as
+// permissões da loja uma única vez por sessão e guarda na store — aqui só
+// lemos o resultado, sem refazer o fetch nem mostrar loading próprio. Se o
+// item "Planos" apareceu no menu, é porque esse acesso já foi confirmado.
+const iniciarSeLiberado = () => {
+    if (tenantStore.hasAssinaturas) {
+        Promise.all([carregarPlanos(), carregarServicos(), carregarClientesLista()]);
+    }
+};
+
+onMounted(() => {
     if (toastRef.value) toastInstance.value = new Toast(toastRef.value);
     bsModalPlano = new Modal(modalPlanoRef.value);
 
-    try {
-        const tenantId = Cookies.get('tenant_id');
-        if (tenantId) {
-            const response = await axios.get(`${API_URL}/tenants/${tenantId}/plano`, getConfig());
-            temModuloAssinaturas.value = response.data.moduloAssinaturas === true;
-        }
-    } catch (error) {
-        console.error('Erro ao buscar as permissões dos módulos:', error);
-    } finally {
-        carregandoPermissoes.value = false;
-    }
-
-    if (temModuloAssinaturas.value) {
-        await Promise.all([carregarPlanos(), carregarServicos(), carregarClientesLista()]);
+    if (tenantStore.carregado) {
+        iniciarSeLiberado();
+    } else {
+        // Navegação direta pra /planos (URL digitada, F5) — a store ainda não
+        // resolveu; reage assim que o MainLayout terminar de buscar.
+        const pararDeObservar = watch(() => tenantStore.carregado, (carregado) => {
+            if (carregado) { iniciarSeLiberado(); pararDeObservar(); }
+        });
     }
 });
 </script>

@@ -30,11 +30,6 @@
                 </div>
             </div>
 
-            <div v-if="carregandoDashboardAdmin" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status"></div>
-            </div>
-
-            <template v-else>
                 <div class="row g-3 mb-4">
                     <div class="col-6 col-md-3">
                         <div class="card border-0 shadow-sm p-4 bg-white h-100">
@@ -149,7 +144,6 @@
                         </div>
                     </div>
                 </div>
-            </template>
         </div>
 
         <div v-else>

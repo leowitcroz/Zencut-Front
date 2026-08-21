@@ -21,7 +21,7 @@
             </div>
         </div>
 
-        <div v-if="!temModuloAgendamento" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
+        <div v-if="tenantStore.carregado && !temModuloAgendamento" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
             <i class="bi bi-lock-fill fs-1 me-4 text-warning"></i>
             <div>
                 <h5 class="fw-bold mb-1">Recurso Indisponível no seu Plano</h5>
@@ -323,14 +323,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { Toast } from 'bootstrap'
 import Cookies from 'js-cookie' // 👇 IMPORTAÇÃO ADICIONADA
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { ehContaAdmin } from '../utils/funcionarios.js'
+import { useTenantStore } from '../stores/tenant'
 
 const confirmModalRef = ref(null);
+const tenantStore = useTenantStore();
 
 // CONFIGURAÇÃO DA API USANDO O PADRÃO VITE
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -344,8 +346,8 @@ const getConfig = () => ({
 });
 
 // --- ESTADOS GERAIS DO COMPONENTE ---
-const temModuloAgendamento = ref(true);
-const planoAtual = ref('BÁSICO');
+const temModuloAgendamento = computed(() => tenantStore.hasAgendamento);
+const planoAtual = computed(() => tenantStore.planoSaaS);
 const etapa = ref(1);
 const activeTab = ref('adicionar')
 const barbeirosSelecionados = ref([]);
@@ -377,23 +379,26 @@ const toastRef = ref(null);
 const toastInstance = ref(null);
 const toastMessage = ref({ title: '', body: '', class: '' });
 
-onMounted(async () => {
+// O MainLayout já busca as permissões da loja uma única vez por sessão e
+// guarda na store — aqui só lemos o resultado, sem refazer o fetch nem
+// mostrar loading próprio.
+const iniciarSeLiberado = () => {
+    if (temModuloAgendamento.value) buscarBarbeirosDinamicos();
+};
+
+onMounted(() => {
     // 1. Inicializa os Toasts do Bootstrap
     if (toastRef.value) toastInstance.value = new Toast(toastRef.value);
 
-    // 2. Lê as permissões de plano
-    const savedFeatures = localStorage.getItem('tenant_features');
-    if (savedFeatures) {
-        const features = JSON.parse(savedFeatures);
-        temModuloAgendamento.value = features.agendamento === true || features.agendamento == 1 || features.agendamento === "true";
-        planoAtual.value = features.plano || 'BÁSICO';
+    // 2. Verifica as permissões de plano (da store)
+    if (tenantStore.carregado) {
+        iniciarSeLiberado();
     } else {
-        temModuloAgendamento.value = false;
-    }
-
-    // 3. Busca a equipe
-    if (temModuloAgendamento.value) {
-        await buscarBarbeirosDinamicos();
+        // Navegação direta pra /horarios (URL digitada, F5) — a store ainda
+        // não resolveu; reage assim que o MainLayout terminar de buscar.
+        const pararDeObservar = watch(() => tenantStore.carregado, (carregado) => {
+            if (carregado) { iniciarSeLiberado(); pararDeObservar(); }
+        });
     }
 })
 

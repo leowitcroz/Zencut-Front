@@ -66,8 +66,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
+import { useTenantStore } from '@/stores/tenant';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import ZenCutLogo from '@/components/ZenCutLogo.vue';
@@ -77,32 +79,27 @@ const auth = useAuthStore();
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const getConfig = () => ({ headers: { 'Authorization': `Bearer ${Cookies.get('access_token')}`, 'x-tenant-id': Cookies.get('tenant_id') } });
 
-// Variáveis reativas para controlar a exibição dos menus
-const hasFinanceiro = ref(false);
-const hasAgendamento = ref(false);
-const hasAssinaturas = ref(false);
-
-// Só é considerado Super Admin quem TEM DE VERDADE a flag isPlatformOwner no banco
-// (não basta estar no subdomínio adm/admin — isso é só onde a conta foi acessada).
-const isSuperAdmin = ref(false);
+// Estado do tenant vive na store (não em refs locais) — o MainLayout não
+// remonta entre navegações dentro da área logada, então essa busca roda só
+// UMA VEZ por sessão; as páginas filhas (Planos, Agendamentos, Estoque,
+// Clientes...) leem esse mesmo estado direto da store em vez de refazer o
+// fetch e mostrar um loading próprio — se o item já está visível no menu,
+// é porque esse fetch já confirmou o acesso.
+const tenantStore = useTenantStore();
+const {
+    isSuperAdmin, funcionarioRole, nomeLoja, corPrimaria, corSecundaria,
+    hasFinanceiro, hasAgendamento, hasAssinaturas, hasProdutos, hasVendas,
+} = storeToRefs(tenantStore);
 
 // O Financeiro geral da loja é só pra Dono/Admin (1) ou Espectador/Sócio (6) —
 // mesma regra que o backend usa em validarAdmin(). Funcionário padrão (2) não vê
 // esse item quebrado no menu; ele tem o dele próprio em "Meu Perfil".
-const funcionarioRole = ref(null);
 const podeVerFinanceiroGeral = computed(() => funcionarioRole.value === 1 || funcionarioRole.value === 6);
 
 // Funcionário comum (role 2) só tem "Meu Perfil" — lá dentro já tem as abas de
 // Agendamentos e Financeiro filtradas pra ele mesmo. Dashboard, Agenda geral,
 // Planos e Financeiro da loja são exclusivos do Dono/Admin/Espectador.
 const isFuncionarioComum = computed(() => funcionarioRole.value === 2);
-
-// Personalização visual da loja (nome + paleta de cores escolhida no Perfil) —
-// aplicada em toda a área logada via CSS custom properties (ver .tenant-themed
-// no theme.scss). Super admin nunca é "temizado": mantém a marca ZenCut padrão.
-const nomeLoja = ref('');
-const corPrimaria = ref('#0D1B2A');
-const corSecundaria = ref('#0D6EFD');
 
 // Converte hex pra "r, g, b" — necessário pra combinar com bg-opacity-* do
 // Bootstrap (ex: o avatar do Perfil usa bg-primary bg-opacity-10; sem o rgb
@@ -177,14 +174,18 @@ onMounted(async () => {
                 hasFinanceiro.value = response.data.moduloFinanceiro === true;
                 hasAgendamento.value = response.data.moduloAgendamento === true;
                 hasAssinaturas.value = response.data.moduloAssinaturas === true;
+                hasProdutos.value = response.data.moduloProdutos === true;
+                hasVendas.value = response.data.moduloVendas === true;
                 nomeLoja.value = response.data.nomeNegocio || '';
                 if (response.data.corPrimaria) corPrimaria.value = response.data.corPrimaria;
                 if (response.data.corSecundaria) corSecundaria.value = response.data.corSecundaria;
+                tenantStore.planoSaaS = response.data.planoSaaS || 'BASICO';
             }
         } catch (e) {
             console.error("Erro ao buscar permissões dos módulos:", e);
         }
     }
+    tenantStore.carregado = true;
 });
 
 // A Nova Lógica Inteligente de Logout

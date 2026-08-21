@@ -26,11 +26,7 @@
             </div>
         </div>
 
-        <div v-if="carregandoPermissoes" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-        </div>
-
-        <div v-else-if="!temModuloAgendamento" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
+        <div v-if="tenantStore.carregado && !temModuloAgendamento" class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
             <i class="bi bi-lock-fill fs-1 me-4 text-warning"></i>
             <div>
                 <h5 class="fw-bold mb-1">Recurso Indisponível no seu Plano</h5>
@@ -252,15 +248,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Toast, Modal } from 'bootstrap';
 import ConfirmModal from '../components/ConfirmModal.vue';
 import { ehContaAdmin } from '../utils/funcionarios.js';
+import { useTenantStore } from '../stores/tenant';
 
 const router = useRouter();
+const tenantStore = useTenantStore();
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const getConfig = () => ({ headers: { 'Authorization': `Bearer ${Cookies.get('access_token')}`, 'x-tenant-id': Cookies.get('tenant_id') } });
@@ -283,9 +281,8 @@ const labelTipoCobranca = (agenda) => {
 
 const confirmModalRef = ref(null);
 
-const temModuloAgendamento = ref(false);
-const carregandoPermissoes = ref(true);
-const planoAtual = ref('');
+const temModuloAgendamento = computed(() => tenantStore.hasAgendamento);
+const planoAtual = computed(() => tenantStore.planoSaaS);
 
 const toastRef = ref(null);
 const toastInstance = ref(null);
@@ -486,25 +483,27 @@ const salvarEdicao = async () => {
     }
 };
 
-onMounted(async () => {
+// O MainLayout já busca as permissões da loja uma única vez por sessão e
+// guarda na store — aqui só lemos o resultado, sem refazer o fetch nem
+// mostrar loading próprio. Se "Agenda" apareceu no menu, é porque esse
+// acesso já foi confirmado.
+const iniciarSeLiberado = () => {
+    if (temModuloAgendamento.value) {
+        Promise.all([carregarAgendamentos(), carregarEquipeEServicos()]);
+    }
+};
+
+onMounted(() => {
     if (toastRef.value) toastInstance.value = new Toast(toastRef.value);
 
-    try {
-        const tenantId = Cookies.get('tenant_id');
-        if (tenantId) {
-            const response = await axios.get(`${API_URL}/tenants/${tenantId}/plano`, getConfig());
-            temModuloAgendamento.value = response.data.moduloAgendamento === true;
-            planoAtual.value = response.data.planoSaaS || 'BÁSICO';
-        }
-    } catch (error) {
-        console.error('Erro ao buscar as permissões dos módulos do cliente:', error);
-        showToast('Não foi possível verificar as permissões do seu plano.', 'danger');
-    } finally {
-        carregandoPermissoes.value = false;
-    }
-
-    if (temModuloAgendamento.value) {
-        await Promise.all([carregarAgendamentos(), carregarEquipeEServicos()]);
+    if (tenantStore.carregado) {
+        iniciarSeLiberado();
+    } else {
+        // Navegação direta pra /agendamentos (URL digitada, F5) — a store
+        // ainda não resolveu; reage assim que o MainLayout terminar de buscar.
+        const pararDeObservar = watch(() => tenantStore.carregado, (carregado) => {
+            if (carregado) { iniciarSeLiberado(); pararDeObservar(); }
+        });
     }
 });
 </script>
