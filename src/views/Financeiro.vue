@@ -676,7 +676,13 @@ const toastMessage = ref(''); const toastClass = ref(''); const toastIcon = ref(
 //  AUTO-RELOAD DE DATAS E UTILITÁRIOS
 // =========================================================================
 let timeoutDebounce = null;
+// onMounted seta dataInicio/dataFim (os valores padrão do mês atual) e chama
+// carregarRelatorio() direto — sem essa flag, esse MESMO set de valores
+// também disparava esse watcher, que 1.5s depois refazia a mesma requisição
+// de novo (dobro de chamada à API em todo carregamento da página).
+let primeiraExecucaoWatch = true;
 watch([dataInicio, dataFim], () => {
+    if (primeiraExecucaoWatch) { primeiraExecucaoWatch = false; return; }
     if (timeoutDebounce) clearTimeout(timeoutDebounce);
     // Enquanto o usuário edita o <input type="date"> (ex: apagando pra digitar
     // de novo), o v-model passa por um estado intermediário vazio — disparar a
