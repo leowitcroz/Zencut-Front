@@ -46,12 +46,43 @@ const corSecundaria = ref('#0D6EFD');
 const tituloPainel = ref('Gerencie sua barbearia com simplicidade.');
 const descricaoPainel = ref('Agendamentos, planos de assinatura, comissões da equipe e financeiro em um só lugar.');
 
+// O router.beforeEach já valida o tenant e guarda a resposta inteira (nome,
+// cores) no sessionStorage ANTES desse layout montar (main.ts só monta o Vue
+// depois do router.isReady()). Lendo esse cache aqui, de forma síncrona, a
+// tela já nasce com a cor certa da loja — sem isso, ela nascia com a cor
+// padrão da ZenCut e só trocava pra cor certa depois de um fetch redundante
+// em onMounted, causando um flash visível.
+let temaJaAplicadoDoCache = false;
+(() => {
+    const hostname = window.location.hostname;
+    const subdomain = hostname.split('.')[0];
+    const cache = sessionStorage.getItem(`tenant_info_${subdomain}`);
+    if (!cache) return;
+    try {
+        const dados = JSON.parse(cache);
+        if (dados?.ehPlataformaPropria) { temaJaAplicadoDoCache = true; return; } // mantém a marca ZenCut padrão
+        mostrarNomeLoja.value = true;
+        nomeLoja.value = dados.nomeNegocio || '';
+        if (dados.corPrimaria) corPrimaria.value = dados.corPrimaria;
+        if (dados.corSecundaria) corSecundaria.value = dados.corSecundaria;
+        if (dados.loginTitulo) tituloPainel.value = dados.loginTitulo;
+        if (dados.loginDescricao) descricaoPainel.value = dados.loginDescricao;
+        temaJaAplicadoDoCache = true;
+    } catch (e) {
+        // cache corrompido — segue com os padrões e deixa o onMounted refazer o fetch
+    }
+})();
+
 const gradientePainel = computed(() => `linear-gradient(155deg, ${corPrimaria.value} 0%, ${corSecundaria.value} 130%)`);
 // O gradiente vai de corPrimaria a corSecundaria — usa a primária (que domina
 // a maior parte da área, por causa do ângulo) pra decidir o texto.
 const corTextoPainel = computed(() => corContrastante(corPrimaria.value));
 
 onMounted(async () => {
+    // Cache do router.beforeEach já aplicou o tema certo antes do primeiro
+    // render — não precisa refazer esse fetch (evita round-trip redundante).
+    if (temaJaAplicadoDoCache) return;
+
     const hostname = window.location.hostname;
     const partes = hostname.split('.');
     const isMainDomain = hostname === 'zencut.com.br' || hostname === 'www.zencut.com.br' || hostname === 'localhost';

@@ -158,6 +158,11 @@ router.beforeEach(async (to, from, next) => {
         // detectar sessão de OUTRA loja "vazando" aqui (ver comentário no bloco
         // que lê os cookies).
         sessionStorage.setItem(`tenant_id_real_${subdomain}`, info?.id || '');
+        // Guarda a resposta inteira (nome, cores, etc) — Login.vue e AuthLayout
+        // reaproveitam isso pra já nascer com a cor certa da loja, sem precisar
+        // refazer esse mesmo fetch depois de montar (o que causava um flash com
+        // a cor padrão da ZenCut antes de trocar pra cor da loja).
+        sessionStorage.setItem(`tenant_info_${subdomain}`, JSON.stringify(info || {}));
 
       } catch (error) {
         console.error("Erro ao validar tenant no router:", error);

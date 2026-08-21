@@ -107,25 +107,37 @@ const configurarTelaPorSubdominio = async () => {
         exibirRegistro.value = !ehSubdominioReservado;
         const subdomain = partes[0]; // Pega a palavra 'alcateia' por exemplo (ou 'adm'/'admin')
 
-        try {
-            // Busca o nome real do negócio (e o ID real do tenant, usado no login
-            // abaixo pra restringir a busca por e-mail a ESTA loja) — inclusive
-            // pro subdomínio reservado do dono da plataforma, que também é um
-            // tenant de verdade e merece a mesma proteção contra e-mail cruzado.
-            const res = await axios.get(`${API_URL}/tenants/info/${subdomain}`);
-            if (res.data && res.data.nomeNegocio) {
-                nomeNegocio.value = res.data.nomeNegocio;
+        const aplicarDados = (dados) => {
+            if (dados && dados.nomeNegocio) {
+                nomeNegocio.value = dados.nomeNegocio;
             }
-            if (res.data?.id) {
-                tenantIdAtual.value = res.data.id;
+            if (dados?.id) {
+                tenantIdAtual.value = dados.id;
             }
             // Esse subdomínio é a própria loja do dono da plataforma (ex: "plataforma"),
             // não uma barbearia cliente de verdade — nunca oferece autocadastro aqui.
-            if (res.data?.ehPlataformaPropria) {
+            if (dados?.ehPlataformaPropria) {
                 exibirRegistro.value = false;
             }
-        } catch (e) {
-            console.error("Não foi possível carregar os dados da barbearia", e);
+        };
+
+        // O router.beforeEach já buscou e guardou esses dados antes desse
+        // componente montar — reaproveita em vez de refazer o mesmo fetch (que
+        // além de desperdiçar uma requisição, atrasava o nome da loja aparecer).
+        const cache = sessionStorage.getItem(`tenant_info_${subdomain}`);
+        if (cache) {
+            try {
+                aplicarDados(JSON.parse(cache));
+            } catch (e) {
+                console.error("Cache de tenant corrompido", e);
+            }
+        } else {
+            try {
+                const res = await axios.get(`${API_URL}/tenants/info/${subdomain}`);
+                aplicarDados(res.data);
+            } catch (e) {
+                console.error("Não foi possível carregar os dados da barbearia", e);
+            }
         }
     } else {
         // Domínio principal (zencut.com.br) — portal global, sem subdomínio
