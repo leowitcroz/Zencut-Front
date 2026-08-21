@@ -678,6 +678,10 @@ const toastMessage = ref(''); const toastClass = ref(''); const toastIcon = ref(
 let timeoutDebounce = null;
 watch([dataInicio, dataFim], () => {
     if (timeoutDebounce) clearTimeout(timeoutDebounce);
+    // Enquanto o usuário edita o <input type="date"> (ex: apagando pra digitar
+    // de novo), o v-model passa por um estado intermediário vazio — disparar a
+    // requisição nesse instante manda uma data inválida pro back.
+    if (!dataInicio.value || !dataFim.value) return;
     carregando.value = true;
     timeoutDebounce = setTimeout(() => { carregarRelatorio(); }, 1500);
 });
