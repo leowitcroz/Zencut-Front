@@ -240,23 +240,31 @@ router.beforeEach(async (to, from, next) => {
       console.error("Erro ao decodificar token JWT", e);
     }
   }
-  // 2.1 Raiz do site: pra visitante não-logado, mostra a landing certa (da
-  // ZenCut no domínio principal, ou da própria loja no subdomínio dela).
-  // Usuário já autenticado sempre cai direto no painel dele.
+  // 2.1 Raiz do site: no domínio principal é a landing da ZenCut — quem já
+  // está logado não tem motivo pra ver aquilo, cai direto no painel dele.
+  // Já no subdomínio de uma loja, "/" é a vitrine PÚBLICA daquela loja —
+  // deixa ver mesmo estando logado (dono, funcionário ou cliente), pra dar
+  // pra conferir como a própria loja aparece pra um visitante sem precisar
+  // deslogar. Pra voltar ao painel é só navegar pra /home; a sessão
+  // continua ativa o tempo todo.
   if (to.path === '/') {
-    if (isAuthenticated) {
-      return next(isCliente ? '/meu-perfil' : '/home');
-    }
-    if (!isMainDomain) {
-      const subdomain = hostname.split('.')[0];
-      const isSubdominioReservado = subdomain === 'adm' || subdomain === 'admin';
-      const ehPlataformaPropria = sessionStorage.getItem(`tenant_plataforma_${subdomain}`) === 'true';
-      // Subdomínio "adm"/"admin" ou a própria loja do dono da plataforma não têm
-      // vitrine de cliente — continua indo direto pro login, como antes.
-      if (isSubdominioReservado || ehPlataformaPropria) {
-        return next('/home');
+    if (isMainDomain) {
+      if (isAuthenticated) {
+        return next(isCliente ? '/meu-perfil' : '/home');
       }
+      return next();
     }
+
+    const subdomain = hostname.split('.')[0];
+    const isSubdominioReservado = subdomain === 'adm' || subdomain === 'admin';
+    const ehPlataformaPropria = sessionStorage.getItem(`tenant_plataforma_${subdomain}`) === 'true';
+    // Subdomínio "adm"/"admin" ou a própria loja do dono da plataforma não têm
+    // vitrine de cliente — continua indo pro painel (ou pro login, se ainda
+    // não estiver autenticado, via blindagem normal logo abaixo).
+    if (isSubdominioReservado || ehPlataformaPropria) {
+      return next(isAuthenticated ? '/home' : '/login');
+    }
+
     return next();
   }
 

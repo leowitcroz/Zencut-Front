@@ -4,9 +4,11 @@
         <header class="loja-header py-3" :style="{ background: dados.corPrimaria, color: corTexto }">
             <div class="container d-flex align-items-center justify-content-between gap-2">
                 <h3 class="loja-header-title fw-bold mb-0 text-truncate">{{ dados.nomeNegocio || 'Sua Loja' }}</h3>
-                <router-link v-if="!modoPreview" to="/login" class="btn fw-bold loja-header-btn flex-shrink-0"
+                <router-link v-if="!modoPreview" :to="estaLogadoNestaLoja ? '/home' : '/login'"
+                    class="btn fw-bold loja-header-btn flex-shrink-0"
                     :style="{ background: dados.corSecundaria, color: corTextoSecundaria, border: 'none' }">
-                    <i class="bi bi-person-circle"></i><span class="loja-header-btn-text">Área do Cliente</span>
+                    <i :class="estaLogadoNestaLoja ? 'bi bi-speedometer2' : 'bi bi-person-circle'"></i>
+                    <span class="loja-header-btn-text">{{ estaLogadoNestaLoja ? 'Voltar ao Painel' : 'Área do Cliente' }}</span>
                 </router-link>
                 <span v-else class="btn fw-bold loja-header-btn flex-shrink-0"
                     :style="{ background: dados.corSecundaria, color: corTextoSecundaria, border: 'none', opacity: .85 }">
@@ -194,6 +196,7 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue';
+import Cookies from 'js-cookie';
 import { corContrastante } from '../utils/cor.js';
 
 const props = defineProps({
@@ -201,6 +204,15 @@ const props = defineProps({
     // Usada dentro do editor: desliga navegação/links reais e envio de contato,
     // já que ali é só uma prévia ao vivo do que o visitante vai ver.
     modoPreview: { type: Boolean, default: false },
+});
+
+// Dono/funcionário/cliente já logados nesta MESMA loja podem visitar a
+// vitrine pública sem precisar deslogar (o router deixa passar em vez de
+// forçar redirecionamento) — nesse caso o botão do header vira um atalho de
+// volta pro painel em vez de "Área do Cliente" (clicar em /login com sessão
+// ativa já redireciona sozinho pro painel certo, via guarda de rota "guest").
+const estaLogadoNestaLoja = computed(() => {
+    return !!Cookies.get('access_token') && Cookies.get('tenant_id') === props.dados.id;
 });
 
 const anoAtual = new Date().getFullYear();
